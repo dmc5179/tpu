@@ -1,0 +1,36 @@
+# Docker image for running TPU tensorflow examples.
+FROM registry.access.redhat.com/ubi7/ubi-init:latest
+
+RUN yum -y --enablerepo='*ubi*' update \
+  && yum -y --enablerepo='*ubi*' install \
+        curl \
+        wget \
+        sudo \
+        ca-certificates \
+        git \
+  && tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM
+[google-cloud-sdk]
+name=Google Cloud SDK
+baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+       https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOM \
+    && yum -y install google-cloud-sdk && \
+    && yum clean all \
+    && rm -rf /var/cache/yum && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir pyyaml && \
+    pip install --no-cache-dir wheel && \
+    pip install --no-cache-dir tensorflow==1.13.1 && \
+    pip install --no-cache-dir google-cloud-storage && \
+    pip install --no-cache-dir google-api-python-client && \
+    pip install --no-cache-dir oauth2client
+
+# Checkout tensorflow/models at the appropriate branch
+RUN git clone -b r1.13.0 --depth 1 https://github.com/tensorflow/models.git /tensorflow_models
+
+# Checkout tensorflow/tpu at the appropriate branch
+RUN git clone -b r1.13 --depth 1 https://github.com/tensorflow/tpu.git /tensorflow_tpu_models
